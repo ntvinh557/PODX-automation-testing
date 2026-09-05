@@ -366,8 +366,9 @@ for browser in chromium firefox webkit; do BROWSER=$browser pytest; done
 - ✅ Return the next Page Object from navigation methods (fluent chaining)
 - ✅ Use `expect(locator)` from `playwright.sync_api` — it auto-retries until timeout
 - ✅ Use `get_by_role`, `get_by_label`, `get_by_test_id` as first-choice locators
-- ✅ Rely on `pytest-playwright` CLI flags (`--tracing on`) or manage tracing in `yield`-based fixtures
-- ✅ Use `expect.soft(locator)` when validating multiple fields on a single page without halting on the first failure
+- ✅ Manage tracing in `yield`-based fixtures via `context.tracing.start()` / `context.tracing.stop()` (see `BaseTest.py`)
+- ✅ Use `pytest-check` when validating multiple fields without halting on the first failure — standard Playwright `expect` calls stop execution immediately upon assertion failure
+- ✅ Place `pytest_runtest_makereport` in `conftest.py` at the project root to ensure hooks are correctly registered
 - ✅ Set up saved auth state (`storage_state="state.json"`) in fixtures to skip login across test modules
 - ❌ Never use `time.sleep()` — replace with `page.wait_for_response()` or auto-retrying assertions
 - ❌ Never hardcode base URLs — always use environment variables (`os.getenv("BASE_URL")`) or the `pytest-base-url` plugin
@@ -379,30 +380,37 @@ for browser in chromium firefox webkit; do BROWSER=$browser pytest; done
 ## Common Pitfalls
 
 - **Problem:** Tests fail randomly in parallel mode using `pytest-xdist`
-**Solution:** Ensure you use the built-in `page` fixture for every test. Never share a `page` object globally; fixtures guarantee process-level `Playwright → Browser → Context → Page` isolation.
+  **Solution:** Ensure you use the built-in `page` fixture for every test. Never share a `page` object globally; fixtures guarantee process-level `Playwright → Browser → Context → Page` isolation.
 - **Problem:** `expect(locator).to_be_visible()` times out even when the element appears
-**Solution:** Increase timeout directly with `expect(locator).to_be_visible(timeout=10_000)` or globally via `page.context.set_default_timeout(10_000)` in a fixture.
+  **Solution:** Increase timeout directly with `expect(locator).to_be_visible(timeout=10_000)` or globally via `context.set_default_timeout(10_000)` in the `context` fixture.
 - **Problem:** `time.sleep(2)` was added but tests are still flaky
-**Solution:** Replace with `with page.expect_response("**/api/endpoint"): action()` or `expect(locator).to_have_text("Done")` which polls the DOM automatically.
+  **Solution:** Replace with `with page.expect_response("**/api/endpoint"): action()` or `expect(locator).to_have_text("Done")` which polls the DOM automatically.
 - **Problem:** Playwright trace zip is empty or missing
-**Solution:** Ensure you pass `--tracing retain-on-failure` to `pytest`, or manually verify `context.tracing.stop(path="trace.zip")` occurs in the teardown phase (after `yield`) of your fixture.
+  **Solution:** Verify `context.tracing.stop(path="trace.zip")` is called in the teardown phase (after `yield`) of your `context` fixture. Also confirm that the `pytest_runtest_makereport` hook lives in `conftest.py` — hooks in other modules are silently ignored.
 - **Problem:** Allure report is blank or missing steps
-**Solution:** Install `allure-pytest` and run tests with the `--alluredir=allure-results` flag. Decorate Page Object methods with `@allure.step` to capture actions.
-- **Problem:** `storage_state` auth file is stale and tests redirect to login
-**Solution:** Use a session-scoped fixture or a prerequisite script to regenerate `state.json` via API before the UI test suite begins.
+  **Solution:** Install `allure-pytest` and run tests with the `--alluredir=allure-results` flag. Decorate Page Object methods with `@allure.step` to capture actions.
+- **Problem:** Screenshot on failure is never captured even though the fixture looks correct
+  **Solution:** The `pytest_runtest_makereport` hook must be in `conftest.py` at the project root. If it is placed in `BaseTest.py` or any other non-conftest module, pytest will not discover it, so `request.node.rep_call` is never set.
+- **Problem:** `${ENV_VAR}` placeholders in config files appear literally at runtime
+  **Solution:** Use an environment variable expansion utility (e.g., `os.path.expandvars`) when loading test data from files before consumption by tests.
 
 ---
 
 ## Related Skills
 
-- `@requests` or `@httpx` — Use for pure API test suites without any UI interaction
+- `httpx` / `requests` — Python HTTP libraries for pure API test suites without any UI interaction; not agent skills, import directly
 - `@selenium-python` — Legacy alternative; prefer Playwright for all new projects
 - `@allure-pytest` — Deep-dive into Allure annotations, categories, and history trends
-- `@testcontainers-python` — Use alongside this skill when tests need a live database or service
+- `@testcontainers-python` — Use alongside this skill when tests need a live database or containerised service
 - `@github-actions-ci` — For building complete multi-browser matrix CI pipelines
+- `pytest-mock` / `unittest.mock` — Mock internal dependencies or external services during UI tests without full network interception
+- `docker` / `docker-compose` — Spin up application stacks locally or in CI before the Playwright suite runs
 
 ## Limitations
 
-- Use this skill only when the task clearly matches the scope described above.
-- Do not treat the output as a substitute for environment-specific validation, testing, or expert review.
-- Stop and ask for clarification if required inputs, permissions, safety boundaries, or success criteria are missing.
+- **Scope:** Use this skill only when the task clearly matches the scope described above. Do not treat generated code as a substitute for environment-specific validation or expert review.
+- **Sync API only:** All patterns in this skill use `sync_playwright`. They are **not** compatible with `async` event loops (e.g. `pytest-asyncio`, FastAPI test clients). Use `async_playwright` and `asyncio` fixtures in those contexts.
+- **Mobile emulation:** Native device emulation (touch events, device pixel ratio, geolocation) requires explicit `browser.new_context(device_scale_factor=..., is_mobile=True, ...)` configuration not covered by default fixtures. Refer to the Playwright docs for `playwright.devices` presets.
+- **pytest-xdist + session fixtures:** Session-scoped fixtures are shared per-worker process, not globally, when using `pytest-xdist`. Each worker spawns its own `playwright` and `browser` instance. Do not assume a single browser is shared across all parallel workers.
+- **Locator contract:** If no `locator_map/*.yaml` file exists for a page, the agent must ask the user for selector details before generating code. Do not guess or hard-code selectors based on common assumptions.
+- **Clarification required:** Stop and ask for clarification if required inputs (BASE_URL, browser type, auth credentials, locator contract), permissions, safety boundaries, or success criteria are missing.
