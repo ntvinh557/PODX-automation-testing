@@ -1,0 +1,25 @@
+login:
+  url: /login
+  
+  email:
+    strategy: label
+    value: Email
+    description: Login email input field
+  
+  password:
+    strategy: label
+    value: Password
+    description: Login password input field
+  
+  submit:
+    strategy: role
+    role: button
+    name: Sign in
+    description: Submit login button
+  
+  error:
+    strategy: test_id
+    value: login-error
+    description: Login error message
+  
+  success_url: "**/dashboard"
