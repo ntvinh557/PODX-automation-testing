@@ -10,15 +10,12 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 # Load .env at import time so all os.getenv() calls in fixtures pick up values
 load_dotenv()
-
-RUN_TIMESTAMP = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
 import allure
 import pytest
@@ -73,9 +70,8 @@ def browser(playwright: Playwright) -> Browser:
 
 @pytest.fixture(scope="function")
 def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
-    run_dir = Path("artifacts") / RUN_TIMESTAMP
-    trace_dir = run_dir / "traces"
-    video_dir = run_dir / "videos"
+    trace_dir = Path("artifacts/traces")
+    video_dir = Path("artifacts/videos")
     
     trace_dir.mkdir(parents=True, exist_ok=True)
     video_dir.mkdir(parents=True, exist_ok=True)
@@ -102,9 +98,24 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
         yield context
     finally:
         test_name = request.node.name
-        safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", test_name)[:120]
+        failed = (
+            getattr(request.node, "rep_call", None) is not None
+            and request.node.rep_call.failed
+        )
         try:
-            context.tracing.stop(path=trace_dir / f"{safe_name}.zip")
+            if failed:
+                trace_path = trace_dir / f"{test_name}.zip"
+                context.tracing.stop(path=trace_path)
+                try:
+                    allure.attach.file(
+                        str(trace_path),
+                        name="Playwright Trace",
+                        extension="zip",
+                    )
+                except Exception as exc:
+                    print(f"[WARN] Could not attach trace: {exc}")
+            else:
+                context.tracing.stop()
         finally:
             context.close()
 
@@ -137,11 +148,21 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Page:
             page.close()
             
         if page.video:
-            test_name = request.node.name
-            safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", test_name)[:120]
-            new_video_path = Path("artifacts") / RUN_TIMESTAMP / "videos" / f"{safe_name}.webm"
-            try:
-                page.video.save_as(new_video_path)
-                page.video.delete()
-            except Exception as e:
-                print(f"[WARN] Could not save/rename video: {e}")
+            if failed:
+                test_name = request.node.name
+                new_video_path = Path("artifacts/videos") / f"{test_name}.webm"
+                try:
+                    page.video.save_as(new_video_path)
+                    allure.attach.file(
+                        str(new_video_path),
+                        name="Execution Video",
+                        attachment_type=allure.attachment_type.WEBM
+                    )
+                    page.video.delete()
+                except Exception as e:
+                    print(f"[WARN] Could not save/attach video: {e}")
+            else:
+                try:
+                    page.video.delete()
+                except Exception:
+                    pass
