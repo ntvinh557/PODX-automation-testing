@@ -48,6 +48,11 @@ coverage.xml
 *.cover
 *.py.cover
 .hypothesis/
+
+# Playwright test artifacts (videos, traces, screenshots)
+artifacts/
+allure-results/
+allure-report/
 .pytest_cache/
 cover/
 

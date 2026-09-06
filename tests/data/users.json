@@ -1,0 +1,12 @@
+{
+  "valid_user": {
+    "email": "${TEST_USER_EMAIL}",
+    "password": "${TEST_USER_PASSWORD}",
+    "username": "${TEST_USER_USERNAME}"
+  },
+  "invalid_user": {
+    "email": "nonexistent@example.com",
+    "password": "WrongPass123!",
+    "username": "nonexistent"
+  }
+}

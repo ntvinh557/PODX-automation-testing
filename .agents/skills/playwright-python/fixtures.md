@@ -101,8 +101,7 @@ class TestDataFactory:
             "password": TestDataFactory.faker.password(
                 length=16, special_chars=True, digits=True, upper_case=True, lower_case=True
             ),
-            "first_name": TestDataFactory.faker.first_name(),
-            "last_name": TestDataFactory.faker.last_name(),
+            "username": TestDataFactory.faker.user_name(),
             "role": "default",
         }
 
@@ -124,15 +123,13 @@ class TestDataFactory:
   {
     "email": "admin@example.test",
     "password": "${TEST_ADMIN_PASSWORD}",
-    "first_name": "Admin",
-    "last_name": "User",
+    "username": "Admin",
     "role": "admin"
   },
   {
     "email": "user@example.test",
     "password": "${TEST_USER_PASSWORD}",
-    "first_name": "Test",
-    "last_name": "User",
+    "username": "Test",
     "role": "default"
   }
 ]
@@ -160,7 +157,7 @@ def save_auth_state():
             page.get_by_label("Email").fill(os.environ["TEST_USER_EMAIL"])
             page.get_by_label("Password").fill(os.environ["TEST_USER_PASSWORD"])
             page.get_by_role("button", name="Sign in").click()
-            page.wait_for_url("**/dashboard")
+            page.wait_for_url("**/")
 
             state_path = Path("artifacts/auth/user-state.json")
             state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -261,7 +258,8 @@ def save_auth_state(base_url: str, email: str, password: str):
         page.get_by_label("Email").fill(email)
         page.get_by_label("Password").fill(password)
         page.get_by_role("button", name="Sign in").click()
-        page.wait_for_url("**/dashboard")
+        page.wait_for_url("**/")
+
         context.storage_state(path=str(state_path))
         browser.close()
 ```

@@ -1,0 +1,68 @@
+# ============================================================
+# LOCATOR CONTRACT - Login Page
+# App: MPODx (https://app.mpodx.com/login/)
+# ============================================================
+# Mapping truc tiep sang BasePage helper methods:
+#   strategy: placeholder -> by_placeholder(value)
+#   strategy: role        -> by_role(role, name=name)
+#   strategy: label       -> by_label(value)
+#   strategy: text        -> by_text(value)
+#   strategy: test_id     -> by_test_id(value)
+# ============================================================
+
+login:
+  url: /login/
+  redirect_url: "**/"
+  # --- Inputs ---
+
+  email:
+    strategy: placeholder
+    value: "E-mail..."
+    description: "Email input field"
+
+  password:
+    strategy: placeholder
+    value: "Password..."
+    description: "Password input field"
+
+  # --- Actions ---
+
+  submit:
+    strategy: role
+    role: button
+    name: "Login"
+    description: "Submit login button"
+
+  forgot_password:
+    strategy: text
+    value: "Forgot Password?"
+    description: "Link to forgot password page"
+
+  sign_up:
+    strategy: text
+    value: "Sign Up"
+    description: "Link to sign up page"
+
+  # --- Validation errors (empty submit) ---
+  # NOTE: Ant Design nests error text inside #control-hooks_*_help > .ant-form-item-explain-error
+  # get_by_text() is unreliable for nested nodes; use CSS selectors in page objects instead.
+
+  email_error:
+    strategy: css
+    value: "#control-hooks_email_help .ant-form-item-explain-error"
+    description: "Inline validation error when email is empty"
+    expected_text: "E-mail is required."
+
+  password_error:
+    strategy: css
+    value: "#control-hooks_password_help .ant-form-item-explain-error"
+    description: "Inline validation error when password is empty"
+    expected_text: "Password is required."
+
+  # --- Server-side error (wrong credentials) ---
+
+  server_error:
+    strategy: css
+    value: ".ant-notification-notice-message"
+    description: "Notification toast when account does not exist"
+    expected_text: "The account does not exist, please check your username or login email"

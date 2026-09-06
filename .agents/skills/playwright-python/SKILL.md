@@ -53,6 +53,7 @@ Before generating page objects or tests:
      ```yaml
      login:
        url: /login
+       redirect_url: "**/"
        email:
          strategy: label
          value: Email
@@ -202,6 +203,10 @@ from tests.base.base_page import BasePage
 class LoginPage(BasePage):
     def __init__(self, page: Page):
         super().__init__(page)
+        from tests.utils.locator_loader import load_locators
+        self.locators = load_locators("login")
+        self.redirect_url = self.locators.get("redirect_url", "**/")
+
         self.email_input = page.get_by_label("Email")
         self.password_input = page.get_by_label("Password")
         self.login_button = page.get_by_role("button", name="Sign in")
@@ -215,8 +220,8 @@ class LoginPage(BasePage):
     def login_as(self, email: str, password: str):
         self.fill(self.email_input, email)
         self.fill(self.password_input, password)
-        self.click_and_wait_for_url(self.login_button, "**/dashboard")
-        return DashboardPage(self.page)
+        self.click_and_wait_for_url(self.login_button, self.redirect_url)
+        return HomePage(self.page)
 
     def login_expect_error(self, email: str, password: str):
         self.fill(self.email_input, email)
@@ -246,9 +251,9 @@ def test_should_login_with_valid_credentials(page):
     user = TestDataFactory.get_default_user()
     login_page = LoginPage(page).open()
 
-    dashboard = login_page.login_as(user["email"], user["password"])
+    home_page = login_page.login_as(user["email"], user["password"])
     
-    expect(dashboard.welcome_banner).to_contain_text(user["first_name"])
+    expect(home_page.welcome_banner).to_contain_text(user["username"])
 
 
 def test_should_show_error_on_invalid_credentials(page):
