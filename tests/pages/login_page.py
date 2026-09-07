@@ -37,7 +37,6 @@ class LoginPage(BasePage):
         from tests.utils.locator_loader import load_locators
         self.locators = load_locators("login")
         self.redirect_url = self.locators.get("redirect_url", "**/")
-        
         # --- Inputs ---
         self.email_input    = self.by_placeholder("E-mail...")
         self.password_input = self.by_placeholder("Password...")
@@ -48,13 +47,10 @@ class LoginPage(BasePage):
         self.sign_up_link      = self.by_text("Sign Up")
 
         # --- Validation errors (empty submit) ---
-        # Ant Design renders errors inside #control-hooks_{field}_help div (role="alert")
-        # Using the ID directly is the most stable locator in headless mode
-        self.email_error    = page.locator("#control-hooks_email_help")
-        self.password_error = page.locator("#control-hooks_password_help")
+        self.email_error    = self.by_test_id("control-hooks_email_help")
+        self.password_error = self.by_test_id("control-hooks_password_help")
 
         # --- Server-side error (wrong credentials) ---
-        # Ant Design notification toast — use CSS class for reliability
         self.server_error = page.locator(".ant-notification-notice-message")
 
     def get_url(self) -> str:

@@ -1,0 +1,129 @@
+metadata:
+  suite_id: "LOGIN_UI_SUITE"
+  title: "MPODX UI Login Test Case Suite"
+  description: "Structured test cases for the Login page, designed as a prompt base for AI to generate Playwright automated test scripts."
+  page_url: "https://app.mpodx.com/login/"
+  depends_on_locator_map: "tests/locator_map/login.yaml"
+  dataset: "tests/data/users.json"
+
+hooks:
+  before_each:
+    - action: "clear_browser_context"
+    - action: "open_page"
+      target: "${page_url}"
+
+test_cases:
+  - id: "TC-LOGIN-001"
+    name: "Successful login with valid credentials"
+    severity: "critical"
+    marks: 
+      - "smoke"
+      - "e2e"
+    description: "Valid email + password -> redirects to home page."
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_url_matches"
+        pattern: ".*(app\\.mpodx\\.com|login).*"
+      - action: "expect_text_contains"
+        locator_key: "body" # generic locator for body
+        value: "${DATA.valid_user.username}"
+
+  - id: "TC-LOGIN-002"
+    name: "Empty password -> displays 'Password is required.' error"
+    severity: "normal"
+    marks: 
+      - "regression"
+    description: "Submit form with valid email and empty password -> password error displayed."
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "focus"
+        locator_key: "login.password"
+      - action: "blur"
+        locator_key: "login.password"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.password_error"
+      - action: "expect_text_equals"
+        locator_key: "login.password_error"
+        value: "Password is required."
+
+  - id: "TC-LOGIN-003"
+    name: "Both fields empty -> displays both errors"
+    severity: "normal"
+    marks: 
+      - "regression"
+    description: "Submit empty form -> both inline error messages are displayed."
+    steps:
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.email_error"
+      - action: "expect_text_equals"
+        locator_key: "login.email_error"
+        value: "E-mail is required."
+      - action: "expect_visible"
+        locator_key: "login.password_error"
+      - action: "expect_text_equals"
+        locator_key: "login.password_error"
+        value: "Password is required."
+
+  - id: "TC-LOGIN-004"
+    name: "Invalid credentials -> 'account does not exist' notification"
+    severity: "critical"
+    marks: 
+      - "regression"
+    description: "Invalid email/password -> server error notification toast appears."
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.invalid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.invalid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.server_error"
+      - action: "expect_text_contains"
+        locator_key: "login.server_error"
+        value: "The account does not exist, please check your username or login email"
+
+  - id: "TC-LOGIN-005"
+    name: "Click 'Forgot Password?' -> navigates to forgot-password page"
+    severity: "minor"
+    marks: 
+      - "regression"
+    description: "Forgot Password? link navigates to the correct page."
+    steps:
+      - action: "click"
+        locator_key: "login.forgot_password"
+    validations:
+      - action: "expect_url_matches"
+        pattern: ".*forgot-password.*"
+
+  - id: "TC-LOGIN-006"
+    name: "Click 'Sign Up' -> navigates to sign-up page"
+    severity: "minor"
+    marks: 
+      - "regression"
+    description: "Sign Up link navigates to the correct page."
+    steps:
+      - action: "click"
+        locator_key: "login.sign_up"
+    validations:
+      - action: "expect_url_matches"
+        pattern: ".*sign-up.*"

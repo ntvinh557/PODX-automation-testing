@@ -25,17 +25,23 @@ from tests.pages.login_page import LoginPage
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _valid_email() -> str:
-    return os.getenv("TEST_USER_EMAIL", "")
+import json
+from pathlib import Path
 
+def _load_users() -> dict:
+    """Load test users and resolve environment variable templates (e.g. ${VAR})."""
+    json_path = Path("tests/data/users.json")
+    if not json_path.exists():
+        return {}
+    content = json_path.read_text(encoding="utf-8")
+    
+    def repl(match: re.Match) -> str:
+        return os.getenv(match.group(1), "")
+        
+    resolved_content = re.sub(r"\$\{([A-Z0-9_]+)\}", repl, content)
+    return json.loads(resolved_content)
 
-def _valid_password() -> str:
-    return os.getenv("TEST_USER_PASSWORD", "")
-
-
-def _valid_username() -> str:
-    return os.getenv("TEST_USER_USERNAME", "")
-
+_USERS_DATA = _load_users()
 
 # ---------------------------------------------------------------------------
 # Test class
@@ -51,9 +57,11 @@ class TestLogin:
     @pytest.mark.e2e
     def test_login_valid_credentials(self, page: Page) -> None:
         """Valid email + password -> redirects to home page."""
-        email = _valid_email()
-        password = _valid_password()
-        username = _valid_username()
+        valid_user = _USERS_DATA.get("valid_user", {})
+        email = valid_user.get("email")
+        password = valid_user.get("password")
+        username = valid_user.get("username")
+        
         if not email or not password:
             pytest.skip("TEST_USER_EMAIL / TEST_USER_PASSWORD not set in .env")
 
@@ -69,14 +77,16 @@ class TestLogin:
     # TC-LOGIN-002 merged into TC-LOGIN-004 (test_both_fields_empty_shows_both_errors)
     # Both tests covered the same scenario: empty submit shows email/password errors.
 
-    @allure.title("TC-LOGIN-003: Empty password -> displays 'Password is required.' error")
+    # TC-LOGIN-002: Empty password
+    @allure.title("TC-LOGIN-002: Empty password -> displays 'Password is required.' error")
     @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.regression
     def test_password_required_error(self, page: Page) -> None:
         """Submit form with valid email and empty password -> password error displayed."""
         login_page = LoginPage(page).open()
         
-        login_page.fill(login_page.email_input, "user@example.com")
+        valid_user = _USERS_DATA.get("valid_user", {})
+        login_page.fill(login_page.email_input, valid_user.get("email", "user@example.com"))
         login_page.password_input.focus()
         login_page.password_input.blur()
         login_page.click(login_page.login_button)
@@ -86,7 +96,7 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-004: Both fields empty -> displays both errors")
+    @allure.title("TC-LOGIN-003: Both fields empty -> displays both errors")
     @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.regression
     def test_both_fields_empty_shows_both_errors(self, page: Page) -> None:
@@ -102,15 +112,17 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-005: Invalid credentials -> 'account does not exist' notification")
+    @allure.title("TC-LOGIN-004: Invalid credentials -> 'account does not exist' notification")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.regression
     def test_invalid_credentials_shows_server_error(self, page: Page) -> None:
         """Invalid email/password -> server error notification toast appears."""
         login_page = LoginPage(page).open()
+        
+        invalid_user = _USERS_DATA.get("invalid_user", {})
         login_page.login_expect_error(
-            email="nonexistent@example.com",
-            password="WrongPass123!",
+            email=invalid_user.get("email", "nonexistent@example.com"),
+            password=invalid_user.get("password", "WrongPass123!"),
         )
 
         expect(login_page.server_error).to_be_visible(timeout=15_000)
@@ -120,7 +132,7 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-006: Click 'Forgot Password?' -> navigates to forgot-password page")
+    @allure.title("TC-LOGIN-005: Click 'Forgot Password?' -> navigates to forgot-password page")
     @allure.severity(allure.severity_level.MINOR)
     @pytest.mark.regression
     def test_forgot_password_link_navigates(self, page: Page) -> None:
@@ -132,7 +144,7 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-007: Click 'Sign Up' -> navigates to sign-up page")
+    @allure.title("TC-LOGIN-006: Click 'Sign Up' -> navigates to sign-up page")
     @allure.severity(allure.severity_level.MINOR)
     @pytest.mark.regression
     def test_sign_up_link_navigates(self, page: Page) -> None:
