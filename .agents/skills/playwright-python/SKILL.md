@@ -5,7 +5,7 @@ category: test-automation
 risk: safe
 source: community
 date_added: "2026-09-01"
-author: copilot
+author: amalsam18
 tags: [playwright, python, pytest, e2e-testing, page-object-model, allure, browser-automation]
 tools: [claude, cursor, antigravity]
 ---

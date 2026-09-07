@@ -86,8 +86,6 @@ class LoginPage(BasePage):
         if password:
             self.fill(self.password_input, password)
         self.click(self.login_button)
-        # Wait for Ant Design to render validation state
-        self.page.wait_for_timeout(500)
         return self
 
     @allure.step("Submit empty form")
