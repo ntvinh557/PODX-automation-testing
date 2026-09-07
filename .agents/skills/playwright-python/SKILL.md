@@ -42,49 +42,30 @@ Supporting reference files are available for deeper topics:
 
 ---
 
-### Step 0: Read Locator Contract File
+### Step 0: Read Test Cases and Locator Contract Files
 
 Before generating page objects or tests:
 
-1. **Ask user or check for locator file:**
-   - Look for `tests/locator_map/login.yaml` or similar
-   - This file defines selectors for login page elements
-   - Example content:
-     ```yaml
-     login:
-       url: /login
-       redirect_url: "**/"
-       email:
-         strategy: label
-         value: Email
-       password:
-         strategy: label
-         value: Password
-       submit:
-         strategy: role
-         role: button
-         name: Sign in
-       error:
-         strategy: test_id
-         value: login-error
-     ```
+1. **Check for test cases and locator files:**
+   - Look for test cases in `tests/testcases/*.yaml` (e.g., `tests/testcases/test_login_ui_cases.yaml`). This file defines the test metadata, scenario descriptions, execution steps, and validations.
+   - Look for page locators in `tests/locator_map/*.yaml` (e.g., `tests/locator_map/login.yaml`). This file defines the selectors for elements on the page.
 
-2. **Parse the locator contract:**
-   - Extract selector strategy and value
-   - Understand what `strategy: label value: Email` means
-   - Convert to Playwright API calls
+2. **Parse YAML files:**
+   - The YAML files act as the single source of truth for generating code.
+   - They should NOT be read dynamically at runtime by the Python test suite to ensure maximum execution performance and reliability.
+   - Extract selector strategies (`css`, `role`, `testid`, `placeholder`, etc.) from the locator map and convert them to explicit Playwright API calls.
+   - Extract test steps and validations from the testcases file to structure the pytest functions.
 
-3. **Generate code with correct selectors:**
-   - Use the values from YAML directly in generated code
-   - Do NOT hard-code based on template assumptions
-   - Example: If YAML says `label "Email"`, use `page.get_by_label("Email")`
+3. **Generate code with hardcoded selectors and test flows:**
+   - For Page Objects (`tests/pages/`): Hardcode the locators based on the locator map YAML (e.g., if YAML says `strategy: testid`, `value: "error"`, write `page.get_by_test_id("error")`).
+   - For Tests (`tests/tests/`): Map the `action`s from the testcases YAML to the generated Page Object methods and Playwright `expect` assertions. Implement any test data fetching as defined in the testcase (e.g. reading from `tests/data/users.json`).
+   - Do NOT guess or use hard-coded template assumptions that conflict with the YAML files.
 
-4. **If locator file missing:**
-   - Ask user to provide it
-   - OR ask user for selector details (what label/role/test_id to use)
-   - DO NOT guess or use hard-coded example selectors
+4. **If contract files are missing:**
+   - Ask the user to provide them or ask for selector/flow details.
+   - DO NOT guess or use hard-coded example selectors.
 
-This ensures **generated code matches the actual application**, not a generic template.
+This ensures **generated code matches the exact application architecture and user-defined workflow**, not a generic template.
 
 ---
 
@@ -203,9 +184,7 @@ from tests.base.base_page import BasePage
 class LoginPage(BasePage):
     def __init__(self, page: Page):
         super().__init__(page)
-        from tests.utils.locator_loader import load_locators
-        self.locators = load_locators("login")
-        self.redirect_url = self.locators.get("redirect_url", "**/")
+        self.redirect_url = "**/"
 
         self.email_input = page.get_by_label("Email")
         self.password_input = page.get_by_label("Password")
@@ -375,6 +354,7 @@ for browser in chromium firefox webkit; do BROWSER=$browser pytest; done
 - ✅ Use `pytest-check` when validating multiple fields without halting on the first failure — standard Playwright `expect` calls stop execution immediately upon assertion failure
 - ✅ Place `pytest_runtest_makereport` in `conftest.py` at the project root to ensure hooks are correctly registered
 - ✅ Set up saved auth state (`storage_state="state.json"`) in fixtures to skip login across test modules
+- ❌ Never dynamically read YAML configuration files (locator maps/test cases) at runtime; they are exclusively for the AI to read and generate native, hardcoded Playwright API calls.
 - ❌ Never use `time.sleep()` — replace with `page.wait_for_response()` or auto-retrying assertions
 - ❌ Never hardcode base URLs — always use environment variables (`os.getenv("BASE_URL")`) or the `pytest-base-url` plugin
 - ❌ Never instantiate `playwright` or `browser` inside a Page Object
