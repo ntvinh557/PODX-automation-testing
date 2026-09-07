@@ -47,8 +47,8 @@ class LoginPage(BasePage):
         self.sign_up_link      = self.by_text("Sign Up")
 
         # --- Validation errors (empty submit) ---
-        self.email_error    = self.by_test_id("control-hooks_email_help")
-        self.password_error = self.by_test_id("control-hooks_password_help")
+        self.email_error    = self.page.locator("#control-hooks_email_help")
+        self.password_error = self.page.locator("#control-hooks_password_help")
 
         # --- Server-side error (wrong credentials) ---
         self.server_error = page.locator(".ant-notification-notice-message")

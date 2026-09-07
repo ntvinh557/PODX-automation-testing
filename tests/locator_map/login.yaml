@@ -48,14 +48,14 @@ login:
   # get_by_text() is unreliable for nested nodes; use CSS selectors in page objects instead.
 
   email_error:
-    strategy: testid
-    value: "control-hooks_email_help"
+    strategy: css
+    value: "#control-hooks_email_help"
     description: "Inline validation error when email is empty"
     expected_text: "E-mail is required."
 
   password_error:
-    strategy: testid
-    value: "control-hooks_password_help"
+    strategy: css
+    value: "#control-hooks_password_help"
     description: "Inline validation error when password is empty"
     expected_text: "Password is required."
 
