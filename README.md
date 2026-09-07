@@ -38,7 +38,7 @@ This project implements the **Page Object Model (POM)** architectural pattern co
 
 | Component | Technology / Library | Purpose |
 |---|---|---|
-| **Language** | Python 3.10+ | Core development language |
+| **Language** | Python 3.11 | Core development language |
 | **Automation Engine** | [Playwright Python](https://playwright.dev/python/) | High-speed browser automation (Chromium, Firefox, WebKit) |
 | **Test Runner** | [pytest](https://docs.pytest.org/) | Fixture management, test discovery, and assertions |
 | **Reporting** | [Allure Report](https://allurereport.org/) | Comprehensive test reports with steps, severities, and attachments |
@@ -86,10 +86,10 @@ PODX-automation-testing/
 
 ---
 
-## 💻 Prerequisites
+## 💻 Prerequisitesx
 
 - **Operating System**: macOS, Linux, or Windows
-- **Python**: Version `3.10` or higher
+- **Python**: Version `3.11` *(Note: 3.13+ is not recommended yet due to missing wheel support for C-extension dependencies like `greenlet` used by Playwright)*
 - **Node.js** *(Optional)*: Required if you wish to run the Allure CLI locally (`allure serve`)
 
 Verify Python installation:
@@ -165,6 +165,7 @@ AUTH_STATE=artifacts/auth/user-state.json
 # Test user credentials
 TEST_USER_EMAIL=your_email_or_username
 TEST_USER_PASSWORD=your_password
+TEST_USER_USERNAME=your_expected_username_after_login
 TEST_ADMIN_EMAIL=admin@example.com
 TEST_ADMIN_PASSWORD=your_admin_password
 ```
@@ -276,8 +277,8 @@ Video recordings of each test execution are saved under `artifacts/videos/*.webm
 ### 1. Define Locators for a New Page
 Create a YAML file in `tests/locator_map/<page_name>.yaml`:
 ```yaml
-dashboard:
-  url: /dashboard
+home:
+  url: /
   user_avatar:
     strategy: test_id
     value: "user-profile-avatar"
@@ -292,8 +293,8 @@ Inherit from `BasePage` in `tests/pages/<page_name>_page.py`:
 ```python
 from tests.base.base_page import BasePage
 
-class DashboardPage(BasePage):
-    URL = "/dashboard"
+class HomePage(BasePage):
+    URL = "/"
 
     def __init__(self, page):
         super().__init__(page)
@@ -310,16 +311,16 @@ Create a test file under `tests/tests/test_<feature>.py`:
 import allure
 import pytest
 from playwright.sync_api import Page, expect
-from tests.pages.dashboard_page import DashboardPage
+from tests.pages.home_page import HomePage
 
-@allure.feature("Dashboard")
-class TestDashboard:
+@allure.feature("Home")
+class TestHome:
 
-    @allure.title("TC-DASH-001: Verify dashboard renders successfully post-login")
+    @allure.title("TC-HOME-001: Verify home page renders successfully post-login")
     @pytest.mark.smoke
-    def test_dashboard_visible(self, page: Page):
-        dashboard = DashboardPage(page).open()
-        expect(dashboard.avatar).to_be_visible()
+    def test_home_page_visible(self, page: Page):
+        home_page = HomePage(page).open()
+        expect(home_page.avatar).to_be_visible()
 ```
 
 ---

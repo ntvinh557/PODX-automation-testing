@@ -22,4 +22,4 @@ login:
     value: login-error
     description: Login error message
   
-  success_url: "**/dashboard"
+  success_url: "**/"

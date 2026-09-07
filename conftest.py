@@ -141,7 +141,7 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Page:
                 print(f"[WARN] Could not capture failure screenshot: {exc}")
         if not page.is_closed():
             try:
-                # Dừng lại 1s để video/trace kịp ghi lại màn hình đích cuối cùng trước khi đóng
+                # Wait 1s so video/trace can record the final state before closing
                 page.wait_for_timeout(1000)
             except Exception:
                 pass

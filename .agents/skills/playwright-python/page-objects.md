@@ -114,11 +114,11 @@ class LoginPage(BasePage):
         self.wait_for_page_load()
         return self
 
-    def login_as(self, email: str, password: str) -> DashboardPage:
+    def login_as(self, email: str, password: str) -> 'HomePage':
         self.fill(self.email_input, email)
         self.fill(self.password_input, password)
-        self.click_and_wait_for_url(self.login_button, "**/dashboard")
-        return DashboardPage(self.page)
+        self.click_and_wait_for_url(self.login_button, "**/")
+        return HomePage(self.page)
 ```
 
 **Design Note:** When AI generates code for a new project:
@@ -131,7 +131,7 @@ class LoginPage(BasePage):
 Usage:
 
 ```python
-dashboard = LoginPage(page).open().login_as("user@test.com", "secret")
+home_page = LoginPage(page).open().login_as("user@test.com", "secret")
 ```
 
 ---

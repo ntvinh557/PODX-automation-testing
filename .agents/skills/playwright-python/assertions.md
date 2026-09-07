@@ -37,7 +37,7 @@ expect(login_submit_button).to_have_count(1)  # Ensures no ambiguity
 
 # Attribute
 expect(locator).to_have_attribute("aria-expanded", "true")
-expect(locator).to_have_attribute("href", re.compile(r".*\/dashboard"))
+expect(locator).to_have_attribute("href", "/")
 
 # Class names
 expect(locator).to_have_class(re.compile(r"btn-.*"))
@@ -63,12 +63,12 @@ expect(locator).to_be_editable()
 
 ```python
 # URL
-expect(page).to_have_url("https://example.com/dashboard")
-expect(page).to_have_url(re.compile(r".*/dashboard"))
+expect(page).to_have_url("https://example.com/")
+expect(page).to_have_url(re.compile(r".*\/$"))
 
 # Title
-expect(page).to_have_title("Dashboard – MyApp")
-expect(page).to_have_title(re.compile(r".*Dashboard.*"))
+expect(page).to_have_title("My App")
+expect(page).to_have_title(re.compile(r".*App.*"))
 ```
 
 ---
@@ -140,7 +140,7 @@ assert response.json()["status"] == "UP"
 ## Screenshot Comparison (Visual Testing)
 
 ```python
-expect(page).to_have_screenshot("dashboard.png", full_page=True, threshold=0.2)
+expect(page).to_have_screenshot("home.png", full_page=True, threshold=0.2)
 expect(page.locator(".chart-container")).to_have_screenshot("revenue-chart.png")
 
 # Update golden files deliberately by deleting/re-recording the expected snapshot,

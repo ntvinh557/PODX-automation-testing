@@ -1,13 +1,13 @@
 """test_login.py – Login test suite for MPODx.
 
 Covers:
-  TC-LOGIN-001  Login thành công với credentials hợp lệ
-  TC-LOGIN-002  Email bỏ trống → hiển thị lỗi inline
-  TC-LOGIN-003  Password bỏ trống → hiển thị lỗi inline
-  TC-LOGIN-004  Cả hai trường bỏ trống → hiển thị cả hai lỗi
-  TC-LOGIN-005  Sai email/password → hiển thị notification server error
-  TC-LOGIN-006  Đường dẫn Forgot Password đúng
-  TC-LOGIN-007  Đường dẫn Sign Up đúng
+  TC-LOGIN-001  Successful login with valid credentials
+  TC-LOGIN-002  Empty email -> displays inline error
+  TC-LOGIN-003  Empty password -> displays inline error
+  TC-LOGIN-004  Both fields empty -> displays both inline errors
+  TC-LOGIN-005  Invalid email/password -> displays server error notification
+  TC-LOGIN-006  Forgot Password link navigates correctly
+  TC-LOGIN-007  Sign Up link navigates correctly
 """
 from __future__ import annotations
 
@@ -45,12 +45,12 @@ def _valid_username() -> str:
 @allure.story("Login")
 class TestLogin:
 
-    @allure.title("TC-LOGIN-001: Login thành công với credentials hợp lệ")
+    @allure.title("TC-LOGIN-001: Successful login with valid credentials")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.smoke
     @pytest.mark.e2e
     def test_login_valid_credentials(self, page: Page) -> None:
-        """Nhập đúng email + password → redirect về dashboard."""
+        """Valid email + password -> redirects to home page."""
         email = _valid_email()
         password = _valid_password()
         username = _valid_username()
@@ -69,11 +69,11 @@ class TestLogin:
     # TC-LOGIN-002 merged into TC-LOGIN-004 (test_both_fields_empty_shows_both_errors)
     # Both tests covered the same scenario: empty submit shows email/password errors.
 
-    @allure.title("TC-LOGIN-003: Password bỏ trống → hiển thị lỗi 'Password is required.'")
+    @allure.title("TC-LOGIN-003: Empty password -> displays 'Password is required.' error")
     @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.regression
     def test_password_required_error(self, page: Page) -> None:
-        """Submit form với email có giá trị, password rỗng → lỗi password hiện ra."""
+        """Submit form with valid email and empty password -> password error displayed."""
         login_page = LoginPage(page).open()
         
         login_page.fill(login_page.email_input, "user@example.com")
@@ -86,11 +86,11 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-004: Cả email và password bỏ trống → hiển thị cả hai lỗi")
+    @allure.title("TC-LOGIN-004: Both fields empty -> displays both errors")
     @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.regression
     def test_both_fields_empty_shows_both_errors(self, page: Page) -> None:
-        """Submit form hoàn toàn rỗng → cả hai thông báo lỗi inline cùng xuất hiện."""
+        """Submit empty form -> both inline error messages are displayed."""
         login_page = LoginPage(page).open()
         login_page.submit_empty()
 
@@ -102,11 +102,11 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-005: Sai credentials → notification 'account does not exist'")
+    @allure.title("TC-LOGIN-005: Invalid credentials -> 'account does not exist' notification")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.regression
     def test_invalid_credentials_shows_server_error(self, page: Page) -> None:
-        """Nhập email/password sai → notification toast từ server xuất hiện."""
+        """Invalid email/password -> server error notification toast appears."""
         login_page = LoginPage(page).open()
         login_page.login_expect_error(
             email="nonexistent@example.com",
@@ -120,11 +120,11 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-006: Click 'Forgot Password?' → chuyển tới trang forgot-password")
+    @allure.title("TC-LOGIN-006: Click 'Forgot Password?' -> navigates to forgot-password page")
     @allure.severity(allure.severity_level.MINOR)
     @pytest.mark.regression
     def test_forgot_password_link_navigates(self, page: Page) -> None:
-        """Link Forgot Password? điều hướng đúng trang."""
+        """Forgot Password? link navigates to the correct page."""
         login_page = LoginPage(page).open()
         login_page.go_to_forgot_password()
 
@@ -132,11 +132,11 @@ class TestLogin:
 
     # ------------------------------------------------------------------
 
-    @allure.title("TC-LOGIN-007: Click 'Sign Up' → chuyển tới trang sign-up")
+    @allure.title("TC-LOGIN-007: Click 'Sign Up' -> navigates to sign-up page")
     @allure.severity(allure.severity_level.MINOR)
     @pytest.mark.regression
     def test_sign_up_link_navigates(self, page: Page) -> None:
-        """Link Sign Up điều hướng đúng trang."""
+        """Sign Up link navigates to the correct page."""
         login_page = LoginPage(page).open()
         login_page.go_to_sign_up()
 

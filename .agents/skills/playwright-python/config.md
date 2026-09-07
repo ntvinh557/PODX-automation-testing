@@ -105,11 +105,11 @@ pytest -q
 tests/
 ├── locator_map/          ← Project-specific locator contracts
 │   ├── login.yaml       ← Defines email, password, submit, error locators
-│   ├── dashboard.yaml   ← Page-specific locators
+│   ├── home.yaml       ← Page-specific locators
 │   └── .gitignore       ← Ignore auto-generated maps
 ├── pages/
 │   ├── login_page.py
-│   └── dashboard_page.py
+│   └── home_page.py
 └── tests/
     └── test_login.py
 ```
@@ -145,7 +145,7 @@ login:
     required: false
     description: Error message display
   
-  success_url: "**/dashboard"
+  success_url: "**/"
 ```
 
 ---
