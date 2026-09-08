@@ -192,18 +192,35 @@ class TestLogin:
     @pytest.mark.regression
     def test_mock_delayed_response(self, page: Page) -> None:
         """UI prevents double submission and handles high latency gracefully."""
-        APIMocker(page).mock_login_delayed_success(delay_ms=2000, body={"id": 1, "token": "fake-token"})
-        login_page = LoginPage(page).open()
+        # Use manual fulfill to avoid blocking the Python thread with time.sleep
+        mocker = APIMocker(page)
+        routes = mocker.mock_login_manual_fulfill()
         
+        login_page = LoginPage(page).open()
+    
         valid_user = TestDataFactory.get_valid_user()
         login_page.fill(login_page.email_input, valid_user.get("email", "test@example.com"))
         login_page.fill(login_page.password_input, valid_user.get("password", "Pass123!"))
-        
+    
         # Click without waiting for navigation yet
         login_page.click(login_page.login_button)
-        
+    
         # Assert the button is immediately disabled while the request is pending
-        expect(login_page.login_button).to_be_disabled()
+        # In Ant Design, the button uses the ant-btn-loading class instead of the native HTML disabled attribute
+        expect(login_page.login_button).to_have_class(re.compile(r".*ant-btn-loading.*"))
+        
+        # Now manually fulfill the intercepted route
+        # Wait up to 2 seconds for the route to be intercepted (in case of async delays)
+        for _ in range(20):
+            if routes:
+                break
+            page.wait_for_timeout(100)
+            
+        assert len(routes) > 0, "The login request was never intercepted by the mock!"
+        mocker._handle_route(routes[0], 200, {"id": 1, "token": "fake-token"})
+            
+        # The frontend should redirect on success
+        expect(page).to_have_url(re.compile(r".*login.*"))
 
     # ------------------------------------------------------------------
 

@@ -14,37 +14,47 @@ class APIMocker:
         self.page = page
         self.api_url = settings.api_url
         self.login_endpoint = f"{self.api_url}/login/"
+        self.cors_headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+            "Access-Control-Allow-Headers": "*",
+        }
+
+    def _handle_route(self, route: Route, status: int, body: dict, custom_headers: Optional[dict] = None) -> None:
+        """Centralized route handler to deal with CORS preflight and headers."""
+        if route.request.method == "OPTIONS":
+            route.fulfill(status=204, headers=self.cors_headers)
+            return
+
+        headers = {**self.cors_headers, **(custom_headers or {})}
+        route.fulfill(
+            status=status,
+            headers=headers,
+            content_type="application/json",
+            body=json.dumps(body),
+        )
 
     def mock_login_error(self, status: int, error_message: str, headers: Optional[dict] = None) -> None:
         """Mock the login endpoint to return a generic JSON error."""
-        def fulfill_route(route: Route) -> None:
-            route.fulfill(
-                status=status,
-                headers=headers or {},
-                content_type="application/json",
-                body=json.dumps({"error": error_message}),
-            )
-        self.page.route(self.login_endpoint, fulfill_route)
+        self.page.route(
+            self.login_endpoint, 
+            lambda route: self._handle_route(route, status, {"message": error_message, "error": error_message}, headers)
+        )
 
-    def mock_login_delayed_success(self, delay_ms: int, body: dict) -> None:
-        """Mock the login endpoint with a delayed response to simulate network latency."""
-        import time
-        def delayed_fulfill(route: Route) -> None:
-            time.sleep(delay_ms / 1000.0)
-            route.fulfill(
-                status=200,
-                content_type="application/json",
-                body=json.dumps(body),
-            )
-        self.page.route(self.login_endpoint, delayed_fulfill)
+    def mock_login_manual_fulfill(self) -> list[Route]:
+        """Intercept the route but do not fulfill it automatically so the test can assert intermediate UI states."""
+        routes = []
+        def manual_handler(route: Route) -> None:
+            if route.request.method == "OPTIONS":
+                self._handle_route(route, 204, {})
+            else:
+                routes.append(route)
+        self.page.route(self.login_endpoint, manual_handler)
+        return routes
 
     def mock_login_custom_response(self, status: int, body: dict) -> None:
         """Mock the login endpoint to return a specific status and JSON body."""
         self.page.route(
             self.login_endpoint,
-            lambda route: route.fulfill(
-                status=status,
-                content_type="application/json",
-                body=json.dumps(body),
-            )
+            lambda route: self._handle_route(route, status, body)
         )
