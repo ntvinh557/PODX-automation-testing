@@ -2,7 +2,8 @@ metadata:
   suite_id: "LOGIN_UI_SUITE"
   title: "MPODX UI Login Test Case Suite"
   description: "Structured test cases for the Login page, designed as a prompt base for AI to generate Playwright automated test scripts."
-  page_url: "https://app.mpodx.com/login/"
+  page_url: "${BASE_URL}/login/"
+  api_url: "${API_URL}/login/"
   depends_on_locator_map: "tests/locator_map/login.yaml"
   dataset: "tests/data/users.json"
 
@@ -127,3 +128,129 @@ test_cases:
     validations:
       - action: "expect_url_matches"
         pattern: ".*sign-up.*"
+
+  - id: "TC-LOGIN-007"
+    name: "Mocked 500 Server Error handles gracefully"
+    severity: "critical"
+    marks: 
+      - "regression"
+    description: "UI displays graceful error message when API returns 500 Internal Server Error"
+    mock:
+      endpoint: "${api_url}"
+      status: 500
+      body: { "error": "Internal Server Error" }
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.server_error"
+      - action: "expect_text_contains"
+        locator_key: "login.server_error"
+        value: "Internal Server Error"
+
+  - id: "TC-LOGIN-008"
+    name: "Mocked 429 Rate Limiting warning"
+    severity: "high"
+    marks: 
+      - "regression"
+    description: "UI displays rate limit warning when API returns 429 Too Many Requests"
+    mock:
+      endpoint: "${api_url}"
+      status: 429
+      headers: { "Retry-After": "60" }
+      body: { "error": "Too Many Requests" }
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.server_error"
+      - action: "expect_text_contains"
+        locator_key: "login.server_error"
+        value: "Too Many Requests"
+
+  - id: "TC-LOGIN-009"
+    name: "Mocked Delayed Response (Network latency)"
+    severity: "medium"
+    marks: 
+      - "regression"
+    description: "UI prevents double submission and handles high latency gracefully"
+    mock:
+      endpoint: "${api_url}"
+      status: 200
+      delay_ms: 10000
+      body: { "id": 1, "token": "fake-token" }
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_disabled"
+        locator_key: "login.submit"
+
+  - id: "TC-LOGIN-010"
+    name: "Mocked 403 Forbidden (Locked Account)"
+    severity: "high"
+    marks: 
+      - "regression"
+    description: "UI handles locked account scenario properly"
+    mock:
+      endpoint: "${api_url}"
+      status: 403
+      body: { "error": "Account is locked" }
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_visible"
+        locator_key: "login.server_error"
+      - action: "expect_text_contains"
+        locator_key: "login.server_error"
+        value: "Account is locked"
+
+  - id: "TC-LOGIN-011"
+    name: "Mocked Contract Change (Missing Token in 200 OK)"
+    severity: "critical"
+    marks: 
+      - "regression"
+    description: "UI handles unexpected JSON schema gracefully (Defensive Programming)"
+    mock:
+      endpoint: "${api_url}"
+      status: 200
+      body: { "access_token": "fake-token", "user": {} } # Missing 'token' field
+    steps:
+      - action: "fill"
+        locator_key: "login.email"
+        value: "${DATA.valid_user.email}"
+      - action: "fill"
+        locator_key: "login.password"
+        value: "${DATA.valid_user.password}"
+      - action: "click"
+        locator_key: "login.submit"
+    validations:
+      - action: "expect_url_matches"
+        pattern: ".*login.*" # User should remain on login page, not crash

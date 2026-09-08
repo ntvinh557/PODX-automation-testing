@@ -42,7 +42,6 @@ This project implements the **Page Object Model (POM)** architectural pattern co
 | **Automation Engine** | [Playwright Python](https://playwright.dev/python/) | High-speed browser automation (Chromium, Firefox, WebKit) |
 | **Test Runner** | [pytest](https://docs.pytest.org/) | Fixture management, test discovery, and assertions |
 | **Reporting** | [Allure Report](https://allurereport.org/) | Comprehensive test reports with steps, severities, and attachments |
-| **Locator Management** | PyYAML | Decoupled locator repository stored in declarative YAML files |
 | **Parallel Execution** | pytest-xdist | Multi-process test parallelization across CPU cores |
 | **Environment Management** | python-dotenv | Secure and decoupled environment variable loading |
 

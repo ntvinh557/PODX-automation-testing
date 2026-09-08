@@ -34,9 +34,8 @@ class LoginPage(BasePage):
 
     def __init__(self, page: Page):
         super().__init__(page)
-        from tests.utils.locator_loader import load_locators
-        self.locators = load_locators("login")
-        self.redirect_url = self.locators.get("redirect_url", "**/")
+
+        self.redirect_url = "**/"
         # --- Inputs ---
         self.email_input    = self.by_placeholder("E-mail...")
         self.password_input = self.by_placeholder("Password...")
@@ -71,7 +70,7 @@ class LoginPage(BasePage):
         """Fill credentials and submit; caller should assert redirect URL."""
         self.fill(self.email_input, email)
         self.fill(self.password_input, password)
-        self.click_and_wait_for_url(self.login_button, self.redirect_url)
+        self.click_and_wait_for_url(self.login_button, "**/")
 
     @allure.step("Submit login expecting validation or server error")
     def login_expect_error(self, email: str = "", password: str = "") -> "LoginPage":

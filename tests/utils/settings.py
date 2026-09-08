@@ -10,8 +10,8 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    base_url: str = field(default_factory=lambda: os.getenv("BASE_URL", ""))
-    api_base_url: str = field(default_factory=lambda: os.getenv("API_BASE_URL", ""))
+    base_url: str = field(default_factory=lambda: os.getenv("BASE_URL", "https://app.mpodx.com"))
+    api_url: str = field(default_factory=lambda: os.getenv("API_URL", "**/controller.mpodx.com"))
     browser: str = field(default_factory=lambda: os.getenv("BROWSER", "chromium"))
     headless: bool = field(
         default_factory=lambda: os.getenv("HEADLESS", "true").lower() == "true"
