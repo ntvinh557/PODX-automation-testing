@@ -166,3 +166,10 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Page:
                     page.video.delete()
                 except Exception:
                     pass
+
+@pytest.fixture(autouse=True)
+def _allure_browser_parameter():
+    """Automatically adds the BROWSER environment variable as a parameter in Allure.
+    This prevents tests run on different browsers from being merged as retries of the same test."""
+    browser_name = os.getenv("BROWSER", "chromium").lower()
+    allure.dynamic.parameter("browser", browser_name)

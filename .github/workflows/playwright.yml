@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+  repository_dispatch:
+    types: [ trigger-e2e-tests ]
 
 jobs:
   test:
@@ -38,6 +40,9 @@ jobs:
         env:
           BASE_URL: ${{ vars.BASE_URL || 'https://app.mpodx.com' }}
           API_URL: ${{ vars.API_URL || 'https://controller.mpodx.com' }}
+          TEST_USER_EMAIL: ${{ vars.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ vars.TEST_USER_PASSWORD }}
+          TEST_USER_USERNAME: ${{ vars.TEST_USER_USERNAME }}
           BROWSER: ${{ matrix.browser }}
           HEADLESS: "true"
         run: pytest --alluredir=allure-results
