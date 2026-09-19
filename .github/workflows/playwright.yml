@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -43,7 +43,7 @@ jobs:
         run: pytest --alluredir=allure-results
 
       - name: Upload Playwright traces and videos on failure
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-artifacts-${{ matrix.browser }}
@@ -51,7 +51,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Allure results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-results-${{ matrix.browser }}
@@ -65,30 +65,30 @@ jobs:
     if: always()
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@v4
 
       - name: Download all allure results
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@v4
         with:
           path: allure-results
           pattern: allure-results-*
           merge-multiple: true
 
       - name: Get Allure history
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@v4
         if: always()
         continue-on-error: true
         with:
           ref: gh-pages
-          path: gh-pages
+          path: gh-pages-dir
 
       - name: Copy Allure history
         run: |
           mkdir -p allure-results/history
-          cp -R gh-pages/history/* allure-results/history/ || true
+          cp -R gh-pages-dir/history/* allure-results/history/ || true
 
       - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@385367cde61ac68c2568a117f7579f7f148dc459 # master
+        uses: simple-elf/allure-report-action@master
         if: always()
         with:
           allure_results: allure-results
@@ -97,7 +97,7 @@ jobs:
 
       - name: Deploy report to Github Pages
         if: always()
-        uses: peaceiris/actions-gh-pages@4a2e02b36f31d8974a0d09d3bb9f3172aa2d0d0d # v3
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
