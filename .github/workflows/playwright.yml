@@ -28,7 +28,8 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install --only-binary :all: -r requirements.txt
+        run: |
+          pip install --only-binary :all: -r requirements.txt
 
       - name: Install Playwright Browsers
         run: playwright install --with-deps
