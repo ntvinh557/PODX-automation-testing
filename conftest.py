@@ -142,7 +142,8 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
         )
         try:
             if failed:
-                trace_path = trace_dir / f"{test_name}.zip"
+                browser_name = os.getenv("BROWSER", "chromium").lower()
+                trace_path = trace_dir / f"{test_name}-{browser_name}.zip"
                 context.tracing.stop(path=trace_path)
                 try:
                     allure.attach.file(
@@ -188,7 +189,8 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Page:
         if page.video:
             if failed:
                 test_name = request.node.name
-                new_video_path = Path("artifacts/videos") / f"{test_name}.webm"
+                browser_name = os.getenv("BROWSER", "chromium").lower()
+                new_video_path = Path("artifacts/videos") / f"{test_name}-{browser_name}.webm"
                 try:
                     page.video.save_as(new_video_path)
                     allure.attach.file(
@@ -211,3 +213,20 @@ def _allure_browser_parameter():
     This prevents tests run on different browsers from being merged as retries of the same test."""
     browser_name = os.getenv("BROWSER", "chromium").lower()
     allure.dynamic.parameter("browser", browser_name)
+
+def pytest_collection_modifyitems(config, items):
+    """Modify test items after collection.
+    Appends the browser name to the test name and Allure title."""
+    browser = os.getenv("BROWSER", "chromium").upper()
+    for item in items:
+        # Cập nhật tên test trên console
+        item.name = f"{item.name} [{browser}]"
+        
+        # Cập nhật Allure title (nếu test dùng @allure.title)
+        # allure-pytest lưu trữ title trong marker "allure_display_name"
+        title_marker = item.get_closest_marker("allure_display_name")
+        if title_marker and title_marker.args:
+            original_title = title_marker.args[0]
+            new_title = f"{original_title} [{browser}]"
+            # Thêm marker mới đè lên cái cũ
+            item.add_marker(pytest.mark.allure_display_name(new_title, **title_marker.kwargs))
