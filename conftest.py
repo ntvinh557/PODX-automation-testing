@@ -72,28 +72,30 @@ def authenticated_session(browser: Browser):
     state_path = Path(os.getenv("AUTH_STATE", "artifacts/auth/user-state.json"))
     state_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Mở browser độc lập để xử lý việc lấy token
-    context = browser.new_context(
-        base_url=os.getenv("BASE_URL"),
-        viewport={"width": 1920, "height": 1080}
-    )
-    page = context.new_page()
-    
-    # Gọi trực tiếp module để tránh vòng lặp import (circular import)
-    from tests.pages.login_page import LoginPage
-    from tests.utils.test_data_factory import TestDataFactory
-    
-    valid_user = TestDataFactory.get_valid_user()
-    
-    login_page = LoginPage(page).open()
-    login_page.login_as(valid_user.get("email"), valid_user.get("password"))
-    
-    # Đợi load xong để chắc chắn có token (URL không còn /login)
-    page.wait_for_url(lambda url: "login" not in url, timeout=15000)
-    
-    # Lưu storage state
-    context.storage_state(path=state_path)
-    context.close()
+    # Chỉ thực hiện thao tác UI Login nếu chưa có sẵn file state
+    if not state_path.exists():
+        # Mở browser độc lập để xử lý việc lấy token
+        context = browser.new_context(
+            base_url=os.getenv("BASE_URL"),
+            viewport={"width": 1920, "height": 1080}
+        )
+        page = context.new_page()
+        
+        # Gọi trực tiếp module để tránh vòng lặp import (circular import)
+        from tests.pages.login_page import LoginPage
+        from tests.utils.test_data_factory import TestDataFactory
+        
+        valid_user = TestDataFactory.get_valid_user()
+        
+        login_page = LoginPage(page).open()
+        login_page.login_as(valid_user.get("email"), valid_user.get("password"))
+        
+        # Đợi load xong để chắc chắn có token (URL không còn /login)
+        page.wait_for_url(lambda url: "login" not in url, timeout=15000)
+        
+        # Lưu storage state
+        context.storage_state(path=state_path)
+        context.close()
     
     yield state_path
 
@@ -121,7 +123,9 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
         "locale": "en-US",
         "record_video_dir": str(video_dir),
     }
-    if auth_state.exists():
+
+    # CHỈ load storage_state vào context NẾU testcase đó có xin dùng fixture 'authenticated_session'
+    if "authenticated_session" in request.fixturenames and auth_state.exists():
         context_options["storage_state"] = str(auth_state)
 
     context = browser.new_context(**context_options)
