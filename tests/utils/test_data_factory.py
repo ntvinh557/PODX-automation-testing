@@ -45,3 +45,13 @@ class TestDataFactory:
     def get_invalid_user() -> dict:
         users = TestDataFactory.load_users()
         return users.get("invalid_user", {})
+
+    @staticmethod
+    def get_valid_3ds_user() -> dict:
+        users = TestDataFactory.load_users()
+        return users.get("valid_3ds_user", {})
+
+    @staticmethod
+    def get_invalid_luhn_user() -> dict:
+        users = TestDataFactory.load_users()
+        return users.get("invalid_luhn_user", {})

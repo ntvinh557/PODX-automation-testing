@@ -8,5 +8,27 @@
     "email": "nonexistent@example.com",
     "password": "WrongPass123!",
     "username": "nonexistent"
+  },
+  "valid_3ds_user": {
+    "email": "phuongctq.bk@gmail.com",
+    "card_number": "${TEST_BILLING_CARD_NUMBER}",
+    "card_expiry": "${TEST_BILLING_CARD_EXPIRY}",
+    "card_cvc": "${TEST_BILLING_CARD_CVC}",
+    "cardholder_name": "A",
+    "address_line_1": "Icon 4 Building, 243A Đường La Thành, Láng Thượng, Đống Đa, Hà Nội",
+    "address_line_2": "",
+    "city": "Quận Đống Đa",
+    "state": "Hà Nội",
+    "country": "VN",
+    "postal_code": "84"
+  },
+  "invalid_luhn_user": {
+    "email": "test_invalid@example.com",
+    "card_number": "1234123412341230",
+    "card_expiry": "12/28",
+    "card_cvc": "123",
+    "cardholder_name": "Test User",
+    "address_line_1": "123 Test Street",
+    "city": "Hà Nội"
   }
 }

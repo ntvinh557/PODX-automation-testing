@@ -1,0 +1,224 @@
+version: "1.0"
+scope: "MPODX Billing Method Integration & UI Test Suite"
+description: "Mã định nghĩa Locator Map và 3 Test Cases tự động cho Modal Add New Billing Method dựa trên tài liệu Billing và Contract Locator."
+
+metadata:
+  suite_id: "BILLING_UI_SUITE"
+  title: "MPODX UI Billing Method Integration Test Case Suite"
+  description: "Các kịch bản kiểm thử tự động cho Modal Add New Billing Method cập nhật quy trình đầy đủ."
+  page_url: "${BASE_URL}/billing/"
+  api_url: "${API_URL}/billing/"
+  depends_on_locator_map: "tests/locator_map/billing.yaml"
+  dataset: "tests/data/users.json"
+
+hooks:
+  before_each:
+    - action: "clear_browser_context"
+    - action: "open_page"
+      target: "${page_url}"
+
+locator_map:
+  billing_method:
+    # --- Contact Details ---
+    email:
+      strategy: "role"
+      role: "textbox"
+      name: "Email"
+      description: "Email input field"
+
+    # --- Card Information ---
+    card_number:
+      strategy: "role"
+      role: "textbox"
+      name: "Card number"
+      description: "Card number input field"
+
+    card_expiry:
+      strategy: "role"
+      role: "textbox"
+      name: "Expiration"
+      description: "Card expiration date input field"
+
+    card_cvc:
+      strategy: "role"
+      role: "textbox"
+      name: "Credit or debit card CVC/CVV"
+      description: "Card CVC/CVV input field"
+
+    # --- Billing Address ---
+    cardholder_name:
+      strategy: "role"
+      role: "textbox"
+      name: "Cardholder name"
+      description: "Cardholder name input field"
+
+    country:
+      strategy: "role"
+      role: "combobox"
+      name: "Country or region"
+      description: "Country/Region dropdown select"
+
+    address_line_1:
+      strategy: "role"
+      role: "textbox"
+      name: "Address line 1"
+      description: "Address line 1 input field"
+
+    address_line_2:
+      strategy: "role"
+      role: "textbox"
+      name: "Address line 2"
+      description: "Address line 2 input field"
+
+    city:
+      strategy: "role"
+      role: "textbox"
+      name: "City"
+      description: "City input field"
+
+    province:
+      strategy: "role"
+      role: "combobox"
+      name: "Province"
+      description: "Province/State dropdown select"
+
+    postal_code:
+      strategy: "role"
+      role: "textbox"
+      name: "Postal code"
+      description: "Postal code input field"
+
+    # --- Actions ---
+    submit:
+      strategy: "role"
+      role: "button"
+      name: "Save"
+      description: "Save payment method button"
+
+    # --- Validation Errors ---
+    email_error:
+      strategy: "role"
+      role: "alert"
+      name: "Your email is incomplete."
+      description: "Inline validation error for incomplete email"
+
+    invalid_card_number_error:
+      strategy: "role"
+      role: "alert"
+      name: "Your card number is invalid."
+      description: "Inline validation error for invalid card number"
+
+  billing_card_list:
+    card_item:
+      strategy: "role"
+      role: "listitem"
+      description: "Payment method card item in list"
+
+    set_primary_button:
+      strategy: "role"
+      role: "button"
+      name: "Set Primary"
+      description: "Set primary payment method button"
+
+    edit_button:
+      strategy: "role"
+      role: "button"
+      name: "Edit"
+      description: "Edit payment method button"
+
+test_cases:
+  - id: "TC-BILLING-001"
+    name: "Thêm thẻ thanh toán thành công và xác thực 3DS (Happy Path)"
+    severity: "critical"
+    marks:
+      - "smoke"
+      - "e2e"
+      - "3ds"
+    description: "Điền thông tin thẻ -> Submit -> Kiểm tra nút Processing -> Pass 3DS/Captcha -> Kiểm tra danh sách thẻ hiển thị thẻ mới cùng các nút Set Primary và Edit."
+    steps:
+      - action: "fill"
+        locator_key: "billing_method.email"
+        value: "${DATA.valid_3ds_user.email}"
+      - action: "fill"
+        locator_key: "billing_method.card_number"
+        value: "${DATA.valid_3ds_user.card_number}"
+      - action: "fill"
+        locator_key: "billing_method.card_expiry"
+        value: "${DATA.valid_3ds_user.card_expiry}"
+      - action: "fill"
+        locator_key: "billing_method.card_cvc"
+        value: "${DATA.valid_3ds_user.card_cvc}"
+      - action: "fill"
+        locator_key: "billing_method.cardholder_name"
+        value: "${DATA.valid_3ds_user.cardholder_name}"
+      - action: "fill"
+        locator_key: "billing_method.address_line_1"
+        value: "${DATA.valid_3ds_user.address_line_1}"
+      - action: "fill"
+        locator_key: "billing_method.city"
+        value: "${DATA.valid_3ds_user.city}"
+      - action: "click"
+        locator_key: "billing_method.submit"
+      - action: "expect_element_visible"
+        locator_key: "billing_method.submit_processing"
+        description: "Xác nhận nút chuyển sang trạng thái Processing ngay sau khi submit"
+      - action: "solve_captcha"
+      - action: "handle_3ds_iframe"
+        otp_value: "${DATA.valid_3ds_user.otp}"
+    validations:
+      - action: "expect_modal_closed"
+      - action: "expect_text_contains"
+        locator_key: "billing_card_list.card_item"
+        value: "${DATA.valid_3ds_user.last4}"
+      - action: "expect_element_visible"
+        locator_key: "billing_method.set_primary"
+        description: "Kiểm tra sự xuất hiện của nút Set Primary trên item thẻ"
+      - action: "expect_element_visible"
+        locator_key: "billing_method.edit_card"
+        description: "Kiểm tra sự xuất hiện của nút Edit trên item thẻ"
+
+  - id: "TC-BILLING-002"
+    name: "Bỏ trống các trường bắt buộc"
+    severity: "high"
+    marks:
+      - "ui"
+      - "validation"
+    description: "Xóa sạch Email, Card Info, Address và bấm Save -> Nút Save không gửi API, hiển thị viền đỏ và chữ REQUIRED ở các trường thiếu."
+    steps:
+      - action: "clear"
+        locator_key: "billing_method.email"
+      - action: "clear"
+        locator_key: "billing_method.card_number"
+      - action: "clear"
+        locator_key: "billing_method.cardholder_name"
+      - action: "clear"
+        locator_key: "billing_method.address_line_1"
+      - action: "clear"
+        locator_key: "billing_method.city"
+      - action: "click"
+        locator_key: "billing_method.submit"
+    validations:
+      - action: "expect_no_api_request"
+      - action: "expect_element_visible"
+        locator_key: "billing_method.email_error"
+        description: "Hiển thị lỗi bắt buộc cho Email"
+
+  - id: "TC-BILLING-003"
+    name: "Validate thuật toán Luhn (Số thẻ invalid)"
+    severity: "high"
+    marks:
+      - "ui"
+      - "validation"
+    description: "Nhập số thẻ sai độ dài hoặc không thỏa mãn công thức Luhn -> Báo lỗi 'Your card number is invalid.' với chữ đỏ, viền đỏ."
+    steps:
+      - action: "fill"
+        locator_key: "billing_method.card_number"
+        value: "${DATA.invalid_luhn_user.card_number}"
+      - action: "press"
+        locator_key: "billing_method.card_number"
+        key: "Tab"
+        description: "Trigger out-focus (blur) để hiển thị lỗi inline"
+    validations:
+      - action: "expect_element_visible"
+        locator_key: "billing_method.invalid_card_number_error"
+        description: "Thông báo lỗi số thẻ sai hiển thị"

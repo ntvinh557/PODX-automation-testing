@@ -28,13 +28,12 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> None:
-    """Attach test result to ``item.rep_call`` so the ``page`` fixture can
-    detect failures and capture a screenshot before teardown.
+    """Attach test result to ``item.rep_call`` and ``item.rep_setup`` so fixtures can
+    detect failures and capture a screenshot/trace before teardown.
     """
     outcome = yield
     rep = outcome.get_result()
-    if call.when == "call":
-        item.rep_call = rep
+    setattr(item, f"rep_{rep.when}", rep)
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +61,41 @@ def browser(playwright: Playwright) -> Browser:
         yield browser
     finally:
         browser.close()
+
+
+@pytest.fixture(scope="class")
+def authenticated_session(browser: Browser):
+    """
+    Logs in once per test class and saves the auth token to artifacts/auth/user-state.json.
+    Classes can use this via @pytest.mark.usefixtures('authenticated_session').
+    """
+    state_path = Path(os.getenv("AUTH_STATE", "artifacts/auth/user-state.json"))
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Mở browser độc lập để xử lý việc lấy token
+    context = browser.new_context(
+        base_url=os.getenv("BASE_URL"),
+        viewport={"width": 1920, "height": 1080}
+    )
+    page = context.new_page()
+    
+    # Gọi trực tiếp module để tránh vòng lặp import (circular import)
+    from tests.pages.login_page import LoginPage
+    from tests.utils.test_data_factory import TestDataFactory
+    
+    valid_user = TestDataFactory.get_valid_user()
+    
+    login_page = LoginPage(page).open()
+    login_page.login_as(valid_user.get("email"), valid_user.get("password"))
+    
+    # Đợi load xong để chắc chắn có token (URL không còn /login)
+    page.wait_for_url(lambda url: "login" not in url, timeout=15000)
+    
+    # Lưu storage state
+    context.storage_state(path=state_path)
+    context.close()
+    
+    yield state_path
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +133,8 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
     finally:
         test_name = request.node.name
         failed = (
-            getattr(request.node, "rep_call", None) is not None
-            and request.node.rep_call.failed
+            (getattr(request.node, "rep_setup", None) is not None and request.node.rep_setup.failed) or
+            (getattr(request.node, "rep_call", None) is not None and request.node.rep_call.failed)
         )
         try:
             if failed:
@@ -127,8 +161,8 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Page:
         yield page
     finally:
         failed = (
-            getattr(request.node, "rep_call", None) is not None
-            and request.node.rep_call.failed
+            (getattr(request.node, "rep_setup", None) is not None and request.node.rep_setup.failed) or
+            (getattr(request.node, "rep_call", None) is not None and request.node.rep_call.failed)
         )
         if failed and not page.is_closed():
             try:

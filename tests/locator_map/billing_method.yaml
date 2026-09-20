@@ -1,0 +1,121 @@
+# ============================================================
+# LOCATOR CONTRACT - Add New Billing Method Modal
+# ============================================================
+# Priority: getByRole() -> getByLabel() -> getByPlaceholder() -> getByText() -> getByTestId()
+# Mapping truc tiep sang BasePage helper methods:
+#   strategy: placeholder -> by_placeholder(value)
+#   strategy: role        -> by_role(role, name=name)
+#   strategy: label       -> by_label(value)
+#   strategy: text        -> by_text(value)
+#   strategy: test_id     -> by_test_id(value)
+#   strategy: css         -> by_css(value)
+# ============================================================
+
+billing_method:
+  # --- Contact Details ---
+  email:
+    strategy: role
+    role: textbox
+    name: "Email"
+    description: "Email input field"
+
+  # --- Card Information ---
+  card_number:
+    strategy: role
+    role: textbox
+    name: "Card number"
+    description: "Card number input field"
+
+  card_expiry:
+    strategy: role
+    role: textbox
+    name: "Expiration"
+    description: "Card expiration date input field"
+
+  card_cvc:
+    strategy: role
+    role: textbox
+    name: "Credit or debit card CVC/CVV"
+    description: "Card CVC/CVV input field"
+
+  # --- Billing Address ---
+  cardholder_name:
+    strategy: role
+    role: textbox
+    name: "Cardholder name"
+    description: "Cardholder name input field"
+
+  country:
+    strategy: role
+    role: combobox
+    name: "Country or region"
+    description: "Country/Region dropdown select"
+
+  address_line_1:
+    strategy: role
+    role: textbox
+    name: "Address line 1"
+    description: "Address line 1 input field"
+
+  address_line_2:
+    strategy: role
+    role: textbox
+    name: "Address line 2"
+    description: "Address line 2 input field"
+
+  city:
+    strategy: role
+    role: textbox
+    name: "City"
+    description: "City input field"
+
+  province:
+    strategy: role
+    role: combobox
+    name: "Province"
+    description: "Province/State dropdown select"
+
+  postal_code:
+    strategy: role
+    role: textbox
+    name: "Postal code"
+    description: "Postal code input field"
+
+  # --- Actions ---
+  submit:
+    strategy: role
+    role: button
+    name: "Save"
+    description: "Save payment method button"
+
+  # --- Validation Errors ---
+  email_error:
+    strategy: role
+    role: alert
+    name: "Your email is incomplete."
+    description: "Inline validation error for incomplete email"
+
+  invalid_card_number_error:
+    strategy: role
+    role: alert
+    name: "Your card number is invalid."
+    description: "Inline validation error for incomplete email"
+
+  # --- Saved Card Actions ---
+  set_primary:
+    strategy: role
+    role: button
+    name: "Set Primary"
+    description: "Button to set the payment method as primary"
+
+  edit_card:
+    strategy: role
+    role: button
+    name: "Edit"
+    description: "Button to edit the saved payment method"
+
+  # --- Loading States ---
+  submit_processing:
+    strategy: text
+    value: "Processing"
+    description: "Loading text displayed while the submit button is processing"
