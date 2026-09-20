@@ -29,6 +29,7 @@
     "card_cvc": "123",
     "cardholder_name": "Test User",
     "address_line_1": "123 Test Street",
-    "city": "Hà Nội"
+    "city": "Hà Nội",
+    "country": "Việt Nam"
   }
 }

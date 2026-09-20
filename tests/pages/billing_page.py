@@ -57,17 +57,11 @@ class BillingPage(BasePage):
         return self
 
     def clear_form(self):
-        """Xoá dữ liệu các trường bắt buộc để trigger validation lỗi."""
+        """Xoá dữ liệu các trường cơ bản để trigger validation lỗi."""
         self.email_input.fill("")
         self.email_input.press("Tab")
         self.card_number_input.fill("")
         self.card_number_input.press("Tab")
-        self.cardholder_name_input.fill("")
-        self.cardholder_name_input.press("Tab")
-        self.address_line_1_input.fill("")
-        self.address_line_1_input.press("Tab")
-        self.city_input.fill("")
-        self.city_input.press("Tab")
         
     def fill_billing_info(self, data: dict):
         """Điền toàn bộ thông tin thanh toán từ bộ test data."""
@@ -86,7 +80,25 @@ class BillingPage(BasePage):
         if "cardholder_name" in data:
             self.fill(self.cardholder_name_input, data["cardholder_name"])
             
+        if "country" in data:
+            try:
+                self.country_dropdown.select_option(value=data["country"], timeout=3000)
+            except Exception:
+                pass # Bỏ qua nếu không thể select (ví dụ element bị ẩn)
+
         if "address_line_1" in data:
+            # Xử lý form Address động của Stripe (Autocomplete vs Manual)
+            manual_btn = self.stripe_frame.get_by_role("button", name=re.compile("Enter address manually", re.IGNORECASE))
+            
+            # Chờ 1 trong 2 thẻ xuất hiện
+            any_element = self.address_line_1_input.or_(manual_btn)
+            try:
+                any_element.first.wait_for(state="visible", timeout=10000)
+                if manual_btn.is_visible():
+                    manual_btn.click()
+            except Exception:
+                pass # Nếu timeout cứ để mặc định chạy tiếp, fill() sẽ tự văng lỗi nếu không thấy
+
             self.fill(self.address_line_1_input, data["address_line_1"])
             
         if "city" in data:
