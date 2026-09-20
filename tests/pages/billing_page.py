@@ -25,7 +25,7 @@ class BillingPage(BasePage):
         self.address_line_1_input = self.stripe_frame.get_by_role("textbox", name="Address line 1")
         self.city_input = self.stripe_frame.get_by_role("textbox", name="City")
         # Optional fields from locator map
-        self.country_dropdown = self.stripe_frame.get_by_role("combobox", name="Country or region")
+        self.country_dropdown = self.stripe_frame.locator("select[name='billingCountry']")
         self.address_line_2_input = self.stripe_frame.get_by_role("textbox", name="Address line 2")
         self.province_dropdown = self.stripe_frame.get_by_role("combobox", name="Province")
         self.postal_code_input = self.stripe_frame.get_by_role("textbox", name="Postal code")
@@ -82,7 +82,7 @@ class BillingPage(BasePage):
             
         if "country" in data:
             try:
-                self.country_dropdown.select_option(value=data["country"], timeout=3000)
+                self.country_dropdown.select_option(data["country"], timeout=3000)
             except Exception:
                 pass # Bỏ qua nếu không thể select (ví dụ element bị ẩn)
 
