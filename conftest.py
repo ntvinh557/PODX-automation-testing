@@ -63,13 +63,36 @@ def browser(playwright: Playwright) -> Browser:
         browser.close()
 
 
-@pytest.fixture(scope="class")
-def authenticated_session(browser: Browser):
+@pytest.fixture(scope="function")
+def authenticated_session(request: pytest.FixtureRequest, browser: Browser):
     """
-    Logs in once per test class and saves the auth token to artifacts/auth/user-state.json.
-    Classes can use this via @pytest.mark.usefixtures('authenticated_session').
+    Logs in once per username and saves the auth token to artifacts/auth/user-state-{username}.json.
+    Tests can use this via @pytest.mark.usefixtures('authenticated_session')
+    and customize the user via @pytest.mark.auth(username="testuser").
     """
-    state_path = Path(os.getenv("AUTH_STATE", "artifacts/auth/user-state.json"))
+    username = None
+    
+    # 1. Lấy username từ parametrize (nếu dùng indirect parametrization)
+    if hasattr(request, "param"):
+        if isinstance(request.param, str):
+            username = request.param
+        elif isinstance(request.param, dict) and "username" in request.param:
+            username = request.param["username"]
+    # 2. Lấy username từ marker (nếu dùng @pytest.mark.auth(username="..."))
+    else:
+        marker = request.node.get_closest_marker("auth")
+        if marker and "username" in marker.kwargs:
+            username = marker.kwargs["username"]
+
+    # Quyết định file state_path
+    if username:
+        state_path = Path(f"artifacts/auth/user-state-{username}.json")
+    else:
+        # Nếu không truyền username, dùng file mặc định cấu hình ở AUTH_STATE
+        state_path = Path(os.getenv("AUTH_STATE", "artifacts/auth/user-state.json"))
+        # Fallback username thành valid_user để TestDataFactory lấy đúng thông tin login
+        username = "valid_user"
+
     state_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Chỉ thực hiện thao tác UI Login nếu chưa có sẵn file state
@@ -85,7 +108,10 @@ def authenticated_session(browser: Browser):
         from tests.pages.login_page import LoginPage
         from tests.utils.test_data_factory import TestDataFactory
         
-        valid_user = TestDataFactory.get_valid_user()
+        # Lấy thông tin user dựa vào username truyền vào
+        valid_user = TestDataFactory.get_user(username)
+        if not valid_user:
+            raise ValueError(f"User '{username}' không tồn tại trong data (users.json).")
         
         login_page = LoginPage(page).open()
         login_page.login_as(valid_user.get("email"), valid_user.get("password"))
@@ -116,7 +142,6 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
     if not base_url:
         raise ValueError("BASE_URL must be set before running browser tests")
 
-    auth_state = Path(os.getenv("AUTH_STATE", "artifacts/auth/user-state.json"))
     context_options: dict = {
         "base_url": base_url,
         "viewport": {"width": 1920, "height": 1080},
@@ -125,8 +150,11 @@ def context(browser: Browser, request: pytest.FixtureRequest) -> BrowserContext:
     }
 
     # CHỈ load storage_state vào context NẾU testcase đó có xin dùng fixture 'authenticated_session'
-    if "authenticated_session" in request.fixturenames and auth_state.exists():
-        context_options["storage_state"] = str(auth_state)
+    if "authenticated_session" in request.fixturenames:
+        # Lấy file path state từ fixture (fixture sẽ tự động chạy nếu chưa chạy)
+        auth_state = request.getfixturevalue("authenticated_session")
+        if auth_state.exists():
+            context_options["storage_state"] = str(auth_state)
 
     context = browser.new_context(**context_options)
     context.set_default_timeout(int(os.getenv("DEFAULT_TIMEOUT", "30000")))

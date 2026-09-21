@@ -7,6 +7,7 @@ from tests.utils.test_data_factory import TestDataFactory
 
 @allure.suite("BILLING_UI_SUITE")
 @allure.title("MPODX UI Billing Method Integration Test Case Suite")
+@pytest.mark.auth(username="valid_user_billing")
 @pytest.mark.usefixtures("authenticated_session")
 class TestBillingMethod:
     

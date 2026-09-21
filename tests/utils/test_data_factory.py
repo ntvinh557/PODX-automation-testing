@@ -37,6 +37,12 @@ class TestDataFactory:
         return resolved_data
 
     @staticmethod
+    def get_user(username: str) -> dict:
+        """Lấy thông tin user theo tên key (username)."""
+        users = TestDataFactory.load_users()
+        return users.get(username, {})
+
+    @staticmethod
     def get_valid_user() -> dict:
         users = TestDataFactory.load_users()
         return users.get("valid_user", {})
