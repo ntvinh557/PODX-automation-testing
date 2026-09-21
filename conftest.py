@@ -223,10 +223,12 @@ def pytest_collection_modifyitems(config, items):
         item.name = f"{item.name} [{browser}]"
         
         # Cập nhật Allure title (nếu test dùng @allure.title)
-        # allure-pytest lưu trữ title trong marker "allure_display_name"
-        title_marker = item.get_closest_marker("allure_display_name")
-        if title_marker and title_marker.args:
-            original_title = title_marker.args[0]
-            new_title = f"{original_title} [{browser}]"
-            # Thêm marker mới đè lên cái cũ
-            item.add_marker(pytest.mark.allure_display_name(new_title, **title_marker.kwargs))
+        # Đối với class method, item.obj là bound method không thể set thuộc tính trực tiếp.
+        # Ta cần set trên hàm gốc (item.function)
+        if hasattr(item, "function") and hasattr(item.function, "__allure_display_name__"):
+            item.function.__allure_display_name__ = f"{item.function.__allure_display_name__} [{browser}]"
+        elif hasattr(item.obj, "__allure_display_name__"):
+            try:
+                item.obj.__allure_display_name__ = f"{item.obj.__allure_display_name__} [{browser}]"
+            except AttributeError:
+                pass
